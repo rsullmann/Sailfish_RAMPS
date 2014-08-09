@@ -5,18 +5,18 @@ This is a port of the Sailfish Firmware Authored by Dan Newman and Jetty(https:/
 
 20x4 LCD Display connected in 4 bit mode as follows:
 
-LCD_RS_PIN		    Pin(PortK,1) => Digital Pin #63  
-LCD_RW_PIN		    Pin(PortL,7) => Digital Pin #42  
+LCD_RS_PIN		Pin(PortK,1) => Digital Pin #63  
+LCD_RW_PIN		Pin(PortL,7) => Digital Pin #42  
 LCD_ENABLE_PIN  	Pin(PortK,3) => Digital Pin #65  
-LCD_D0_PIN		    Pin(PortF,5) => Digital Pin #59  
-LCD_D1_PIN		    Pin(PortK,2) => Digital Pin #64  
-LCD_D2_PIN		    Pin(PortL,5) => Digital Pin #44  
-LCD_D3_PIN		    Pin(PortK,4) => Digital Pin #66  
+LCD_D0_PIN		Pin(PortF,5) => Digital Pin #59  
+LCD_D1_PIN		Pin(PortK,2) => Digital Pin #64  
+LCD_D2_PIN		Pin(PortL,5) => Digital Pin #44  
+LCD_D3_PIN		Pin(PortK,4) => Digital Pin #66  
 
 16 Button Keypad Connected as follows:
-INTERFACE_ROW1    Pin(PortA,1) => Digital Pin #23  
-INTERFACE_ROW2    Pin(PortA,3) => Digital Pin #25  
-INTERFACE_ROW3    Pin(PortA,5) => Digital Pin #27  
+INTERFACE_ROW1    	Pin(PortA,1) => Digital Pin #23  
+INTERFACE_ROW2    	Pin(PortA,3) => Digital Pin #25  
+INTERFACE_ROW3    	Pin(PortA,5) => Digital Pin #27  
 INTERFACE_ROW4		Pin(PortA,7) => Digital Pin #29  
 INTERFACE_COL1		Pin(PortC,0) => Digital Pin #37  
 INTERFACE_COL2		Pin(PortC,2) => Digital Pin #35  
