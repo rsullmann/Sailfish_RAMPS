@@ -1,0 +1,185 @@
+/* StandardButtonArray - 16 Button Keypad
+ *
+ *
+ * This is a subclass of the "ButtonArray" class, which defines the protocol
+ * for a button array.
+ *
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
+
+#include "StandardButtonArray.hh"
+#include "Configuration.hh"
+#include "Pin.hh"
+#include <util/delay.h>
+
+static uint8_t previousJ; //state of the PORTA pins(Keypad Rows) from the previous scan
+static micros_t ButtonDelay; ///button delay for debouncing and key repeat
+static uint8_t RowValue;
+static uint8_t ColValue;
+
+#define FULL_BUTTON_MAP 0x1F //0b00011111
+
+void StandardButtonArray::init() {
+  previousJ = 0;
+  RowValue=0;
+  ColValue=0;
+
+  ButtonDelay = SlowDelay;
+
+  initRowRead();
+}
+
+//This sets the button waiting variable as true if button is pressed and also lists the button that is pressed.
+//It also starts a timer if the button pressed for the button delay
+void StandardButtonArray::scanButtons() {
+
+
+  // Don't bother scanning if we already have a button
+  // or if sufficient time has not elapsed between the last button push
+  if (buttonPressWaiting ||
+      (buttonTimeout.isActive() && !buttonTimeout.hasElapsed()))
+    return;
+
+  uint8_t newJ = getJ(); 
+  
+  buttonTimeout.clear();
+
+  if (newJ != previousJ) {
+    uint8_t diff = newJ ^ previousJ;
+    for (uint8_t i = 0; i < 5; i++) {
+      if (diff & (1 << i)) {
+        if (!(newJ & (1 << i))) {
+          if (!buttonPressWaiting) {
+            buttonPress = i;
+            buttonPressWaiting = true;
+            buttonTimeout.start(ButtonDelay);
+          }
+        }
+      }
+    }
+  }
+
+  previousJ = newJ;
+
+}
+
+bool StandardButtonArray::getButton(ButtonArray::ButtonName &button) {
+  bool buttonValid;
+  uint8_t buttonNumber;
+
+  ATOMIC_BLOCK(ATOMIC_FORCEON) {
+    buttonValid = buttonPressWaiting;
+    buttonNumber = buttonPress;
+    buttonPressWaiting = false;
+  }
+
+  if (buttonValid) {
+    button = (ButtonName)(buttonNumber);
+  }
+
+  return buttonValid;
+}
+
+void StandardButtonArray::clearButtonPress() { previousJ = FULL_BUTTON_MAP; }
+
+// Returns true if button is depressed
+bool StandardButtonArray::isButtonPressed(ButtonArray::ButtonName button) { 
+  // Buttons are active low
+  if (getJ() & (1 << button))
+    return false;
+
+  return true;
+}
+uint8_t StandardButtonArray::getJ() {
+
+  RowValue = getRowValue();
+  if (RowValue) {
+  ColValue = getColValue();
+  if ((RowValue==1)&&(ColValue==2)){
+      	//pressed button is UP
+      	return 0B11101111;
+  } else if ((RowValue==2)&&(ColValue==1)){
+      	//pressed button is LEFT
+      	return 0B11111011;
+  } else if ((RowValue==2)&&(ColValue==2)){
+      	//pressed button is CENTER
+      	return 0B11111110;
+  } else if ((RowValue==2)&&(ColValue==3)){
+      	//pressed button is RIGHT
+      	return 0B11111101;
+  } else if ((RowValue==3)&&(ColValue==2)){
+      	//pressed button is DOWN
+      	return 0B11110111;
+  } else {
+    return 0B11111111;
+  } 
+  } else {
+    return 0B11111111;
+  }
+}
+void StandardButtonArray::setButtonDelay(micros_t delay) { ButtonDelay = delay; }
+uint8_t StandardButtonArray::getRowValue() {
+  initRowRead();
+  if (!INTERFACE_ROW1.getValue())
+      return 1;
+  else if (!INTERFACE_ROW2.getValue())
+      return 2; 
+  else if (!INTERFACE_ROW3.getValue())
+      return 3; 
+  else if (!INTERFACE_ROW4.getValue())
+      return 4;  
+  else 
+    return 0;
+
+}
+uint8_t StandardButtonArray::getColValue() {
+  initColRead();
+  if (!INTERFACE_COL1.getValue())
+      return 1;
+  else if (!INTERFACE_COL2.getValue())
+      return 2; 
+  else if (!INTERFACE_COL3.getValue())
+      return 3; 
+  else if (!INTERFACE_COL4.getValue())
+      return 4;  
+  else 
+    return 0;
+
+}
+void StandardButtonArray::initColRead() {
+
+  //This sets the data direction as inputs for C0,C2,C4,C6 and leaves the others unchanged
+  DDRC = DDRC & 0B10101010;//0's set the pin as an input, 1's don't matter
+  //This enables pull-ups on the pins
+  PORTC = PORTC | 0B01010101;//1's set the pullup resistor, 0's don't matter  
+
+  //This sets the data direction as outputs for A1,A3,A5,A7 and leaves the others unchanged
+  DDRA = DDRA | 0B10101010;//1's are output sets, 0's dont matter
+  //This sets the value to zero for the output pins
+  PORTA = PORTA & 0B01010101;//0's set the pin low, 1's don't matter
+
+}
+void StandardButtonArray::initRowRead() {
+  //This sets the data direction as inputs for A1,A3,A5,A7 and leaves the others unchanged
+  DDRA = DDRA & 0B01010101; //0's set the pin as an input, 1's don't matter
+  //This sets the pull ups for the input pins A1,A3,A5,A7 and leaves the others unchanged
+  PORTA = PORTA | 0B10101010; //1's set the pullup resistor, 0's don't matter
+  //This sets the data direction as outputs(value=1) for C0,C2,C4,C6 and leaves the others unchanged
+  DDRC = DDRC | 0B01010101;//1's are output sets, 0's dont matter
+  //This sets the pins low(value=0) so they will pull down the pull ups
+  PORTC = PORTC & 0B10101010;//0's set the pin low, 1's don't matter
+
+}

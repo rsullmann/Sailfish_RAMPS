@@ -1,0 +1,8 @@
+To Build the firmware for RAMPS1.3
+type: scons platform=ramps13-2560
+
+To Upload the firmware:
+type: sudo avrdude -F -V -p m2560 -C /etc/avrdude.conf -P /dev/ttyACM0 -c stk500v2 -b 115200 -U flash:w:build/ramps13-2560/ramps13-2560_v7.7.0.en.hex
+
+   Where, "/dev/ttyACM0" is the USBserial port to use
+          "ramp13-2560_v7.7.0.en.hex" is the name of the built firmware hex file.
